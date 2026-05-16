@@ -1,0 +1,7 @@
+cat > service_graph.json << 'EOF'
+{
+    "user-service": {"dependency_depth": 2},
+    "order-service": {"dependency_depth": 5},
+    "payment-service": {"dependency_depth": 8}
+}
+EOF

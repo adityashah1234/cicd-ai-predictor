@@ -1,0 +1,47 @@
+name: CI Pipeline with AI Failure Prediction
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-test-predict:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools
+          pip install flask pytest xgboost scikit-learn pandas numpy shap mlflow matplotlib seaborn joblib requests scipy
+
+      - name: Run tests - user-service
+        run: cd user-service && python -m pytest test_app.py -v && cd ..
+        continue-on-error: true
+
+      - name: Run tests - order-service
+        run: cd order-service && python -m pytest test_app.py -v && cd ..
+        continue-on-error: true
+
+      - name: Run tests - payment-service
+        run: cd payment-service && python -m pytest test_app.py -v && cd ..
+        continue-on-error: true
+
+      - name: Extract commit features
+        run: python extract_features.py
+        continue-on-error: true
+
+      - name: Upload pipeline data
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-runs-${{ github.run_number }}
+          path: pipeline_runs.csv
+        if: always()

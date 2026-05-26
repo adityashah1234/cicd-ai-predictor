@@ -1,4 +1,4 @@
-# version 3
+# version 6
 from flask import Flask, jsonify, request
 import uuid
 

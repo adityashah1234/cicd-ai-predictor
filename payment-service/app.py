@@ -7,9 +7,11 @@ app = Flask(__name__)
 def pay():
     d = request.get_json()
     if not d or d.get("amount", 0) <= 0:
-        return jsonify({"error": "invalid amount"}), 200
+        return jsonify({"error": "invalid amount"}), 402
     return jsonify({
         "transaction_id": str(uuid.uuid4()),
+        "order_id": d["order_id"],
+        "amount": d["amount"],
         "status": "success"
     }), 200
 

@@ -7,20 +7,23 @@ def write_file(path, content):
 
 def git_push(message):
     os.system("git add .")
-    os.system(f'git commit -m "{message}"')
-    os.system("git push")
+    result = os.system(f'git commit -m "{message}"')
+    if result == 0:
+        os.system("git push")
     time.sleep(2)
 
-# ── Clean working versions of all 3 services ─────────────────────────
+# Each run writes a slightly different comment so Git sees a real change
 
-USER_PASS = '''from flask import Flask, jsonify
+def make_user_pass(n):
+    return f'''# version {n}
+from flask import Flask, jsonify
 
 app = Flask(__name__)
 
 USERS = [
-    {"id": 1, "name": "Alice", "email": "alice@example.com"},
-    {"id": 2, "name": "Bob",   "email": "bob@example.com"},
-    {"id": 3, "name": "Carol", "email": "carol@example.com"},
+    {{"id": 1, "name": "Alice", "email": "alice@example.com"}},
+    {{"id": 2, "name": "Bob",   "email": "bob@example.com"}},
+    {{"id": 3, "name": "Carol", "email": "carol@example.com"}},
 ]
 
 @app.route("/users")
@@ -29,13 +32,15 @@ def get_users():
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "healthy"}), 200
+    return jsonify({{"status": "healthy"}}), 200
 
 if __name__ == "__main__":
     app.run(port=5001)
 '''
 
-ORDER_PASS = '''from flask import Flask, jsonify, request
+def make_order_pass(n):
+    return f'''# version {n}
+from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 ORDERS = []
@@ -45,7 +50,7 @@ counter = 1
 def create_order():
     global counter
     d = request.get_json()
-    o = {"id": counter, "user_id": d["user_id"], "status": "created"}
+    o = {{"id": counter, "user_id": d["user_id"], "status": "created"}}
     ORDERS.append(o)
     counter += 1
     return jsonify(o), 201
@@ -56,13 +61,15 @@ def get_orders():
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "healthy"}), 200
+    return jsonify({{"status": "healthy"}}), 200
 
 if __name__ == "__main__":
     app.run(port=5002)
 '''
 
-PAYMENT_PASS = '''from flask import Flask, jsonify, request
+def make_payment_pass(n):
+    return f'''# version {n}
+from flask import Flask, jsonify, request
 import uuid
 
 app = Flask(__name__)
@@ -71,29 +78,29 @@ app = Flask(__name__)
 def pay():
     d = request.get_json()
     if not d or d.get("amount", 0) <= 0:
-        return jsonify({"error": "invalid amount"}), 402
-    return jsonify({
+        return jsonify({{"error": "invalid amount"}}), 402
+    return jsonify({{
         "transaction_id": str(uuid.uuid4()),
         "order_id": d["order_id"],
         "amount": d["amount"],
         "status": "success"
-    }), 200
+    }}), 200
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "healthy"}), 200
+    return jsonify({{"status": "healthy"}}), 200
 
 if __name__ == "__main__":
     app.run(port=5003)
 '''
 
-# ── Broken versions that cause test failures ──────────────────────────
-
-USER_FAIL = '''from flask import Flask, jsonify
+def make_user_fail(n):
+    return f'''# version {n}
+from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-USERS = "this is not a list"
+USERS = "this is broken on purpose"
 
 @app.route("/users")
 def get_users():
@@ -101,13 +108,15 @@ def get_users():
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "healthy"}), 200
+    return jsonify({{"status": "healthy"}}), 200
 
 if __name__ == "__main__":
     app.run(port=5001)
 '''
 
-ORDER_FAIL = '''from flask import Flask, jsonify, request
+def make_order_fail(n):
+    return f'''# version {n}
+from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 ORDERS = []
@@ -117,7 +126,7 @@ counter = 1
 def create_order():
     global counter
     d = request.get_json()
-    o = {"id": counter, "user_id": d["user_id"], "status": "created"}
+    o = {{"id": counter, "user_id": d["user_id"], "status": "created"}}
     ORDERS.append(o)
     counter += 1
     return jsonify(o), 200
@@ -128,13 +137,15 @@ def get_orders():
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "healthy"}), 200
+    return jsonify({{"status": "healthy"}}), 200
 
 if __name__ == "__main__":
     app.run(port=5002)
 '''
 
-PAYMENT_FAIL = '''from flask import Flask, jsonify, request
+def make_payment_fail(n):
+    return f'''# version {n}
+from flask import Flask, jsonify, request
 import uuid
 
 app = Flask(__name__)
@@ -143,44 +154,24 @@ app = Flask(__name__)
 def pay():
     d = request.get_json()
     if not d or d.get("amount", 0) <= 0:
-        return jsonify({"error": "invalid amount"}), 200
-    return jsonify({
-        "transaction_id": str(uuid.uuid4()),
-        "status": "success"
-    }), 200
+        return jsonify({{"error": "invalid amount"}}), 200
+    return jsonify({{"transaction_id": str(uuid.uuid4()), "status": "success"}}), 200
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "healthy"}), 200
+    return jsonify({{"status": "healthy"}}), 200
 
 if __name__ == "__main__":
     app.run(port=5003)
 '''
 
-def restore_all():
-    write_file("user-service/app.py", USER_PASS)
-    write_file("order-service/app.py", ORDER_PASS)
-    write_file("payment-service/app.py", PAYMENT_PASS)
+pass_makers = [make_user_pass, make_order_pass, make_payment_pass]
+pass_files  = ["user-service/app.py", "order-service/app.py", "payment-service/app.py"]
 
-# ── PASS patterns ─────────────────────────────────────────────────────
-pass_actions = [
-    lambda n: (restore_all(), git_push(f"run {n}: pass - user service healthy")),
-    lambda n: (restore_all(), git_push(f"run {n}: pass - order service healthy")),
-    lambda n: (restore_all(), git_push(f"run {n}: pass - payment service healthy")),
-    lambda n: (restore_all(), git_push(f"run {n}: pass - all services clean")),
-    lambda n: (restore_all(), git_push(f"run {n}: pass - code review applied")),
-]
+fail_makers = [make_user_fail, make_order_fail, make_payment_fail]
+fail_files  = ["user-service/app.py", "order-service/app.py", "payment-service/app.py"]
 
-# ── FAIL patterns ─────────────────────────────────────────────────────
-fail_actions = [
-    lambda n: (write_file("user-service/app.py", USER_FAIL), git_push(f"run {n}: fail - user-service broken")),
-    lambda n: (write_file("order-service/app.py", ORDER_FAIL), git_push(f"run {n}: fail - order-service wrong status")),
-    lambda n: (write_file("payment-service/app.py", PAYMENT_FAIL), git_push(f"run {n}: fail - payment-service wrong code")),
-]
-
-# ── MAIN ──────────────────────────────────────────────────────────────
 print("Starting 100 pipeline run generation...")
-print("Leave this running. Takes about 15-20 minutes.")
 print("")
 
 run = 1
@@ -188,26 +179,29 @@ run = 1
 # 50 PASS runs
 print("=== 50 PASS RUNS ===")
 for i in range(50):
-    action = pass_actions[i % len(pass_actions)]
-    action(run)
+    idx = i % 3
+    write_file(pass_files[idx], pass_makers[idx](run))
+    git_push(f"run {run}: pass - {pass_files[idx].split('/')[0]}")
     print(f"  Pushed run {run}/100 - PASS")
     run += 1
 
-# Always restore before fail runs
-restore_all()
-git_push("restore: all services working before fail runs")
-
-# 50 FAIL runs - restore after each one
+# 50 FAIL runs
 print("\n=== 50 FAIL RUNS ===")
 for i in range(50):
-    action = fail_actions[i % len(fail_actions)]
-    action(run)
+    idx = i % 3
+    write_file(fail_files[idx], fail_makers[idx](run))
+    git_push(f"run {run}: fail - {fail_files[idx].split('/')[0]}")
     print(f"  Pushed run {run}/100 - FAIL")
     run += 1
-    restore_all()
-    git_push(f"restore after run {run - 1}")
 
-print("\n" + "=" * 40)
+# Final restore
+print("\nRestoring all services...")
+write_file("user-service/app.py", make_user_pass(999))
+write_file("order-service/app.py", make_order_pass(999))
+write_file("payment-service/app.py", make_payment_pass(999))
+git_push("final restore: all services working")
+
+print("\n" + "="*40)
 print("ALL 100 RUNS COMPLETE!")
-print("Check your GitHub Actions tab.")
-print("=" * 40)
+print("Check github.com/adityashah1234/cicd-ai-predictor/actions")
+print("="*40)

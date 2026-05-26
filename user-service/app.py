@@ -1,8 +1,13 @@
+# version 1
 from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-USERS = "this is not a list"
+USERS = [
+    {"id": 1, "name": "Alice", "email": "alice@example.com"},
+    {"id": 2, "name": "Bob",   "email": "bob@example.com"},
+    {"id": 3, "name": "Carol", "email": "carol@example.com"},
+]
 
 @app.route("/users")
 def get_users():

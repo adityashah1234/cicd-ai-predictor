@@ -11,7 +11,7 @@ def create_order():
     o = {"id": counter, "user_id": d["user_id"], "status": "created"}
     ORDERS.append(o)
     counter += 1
-    return jsonify(o), 201
+    return jsonify(o), 200
 
 @app.route("/orders")
 def get_orders():

@@ -21,7 +21,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools
-          pip install flask pytest xgboost scikit-learn pandas numpy shap mlflow matplotlib seaborn joblib requests scipy
+          pip install flask pytest xgboost scikit-learn pandas numpy \
+                      shap mlflow matplotlib seaborn joblib requests scipy
 
       - name: Run tests - user-service
         run: cd user-service && python -m pytest test_app.py -v && cd ..
@@ -37,6 +38,10 @@ jobs:
 
       - name: Extract commit features
         run: python extract_features.py
+        continue-on-error: true
+
+      - name: AI failure prediction
+        run: python predict.py
         continue-on-error: true
 
       - name: Upload pipeline data

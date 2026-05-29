@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/adityashah/Desktop/cicd-ai-predictor/mlruns/262228911896953149/99a1e705b80548568876144bc5eee28a/artifacts
+end_time: 1780080308038
+entry_point_name: ''
+experiment_id: '262228911896953149'
+lifecycle_stage: active
+run_id: 99a1e705b80548568876144bc5eee28a
+run_name: XGBoost
+run_uuid: 99a1e705b80548568876144bc5eee28a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1780080306118
+status: 3
+tags: []
+user_id: adityashah

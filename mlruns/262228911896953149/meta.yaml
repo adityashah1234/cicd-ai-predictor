@@ -1,0 +1,6 @@
+artifact_location: file:///Users/adityashah/Desktop/cicd-ai-predictor/mlruns/262228911896953149
+creation_time: 1780079843267
+experiment_id: '262228911896953149'
+last_update_time: 1780079843267
+lifecycle_stage: active
+name: cicd_failure_prediction
